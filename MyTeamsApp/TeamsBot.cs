@@ -1,10 +1,11 @@
-﻿using AdaptiveCards;
+using AdaptiveCards;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Teams;
 using Microsoft.Bot.Schema;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http;
 
 namespace MyTeamsApp
 {
@@ -14,17 +15,24 @@ namespace MyTeamsApp
     /// </summary>
     public class TeamsBot : TeamsActivityHandler
     {
-        public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        //public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        //{
+        //    if (turnContext.Activity.Type == "message")
+        //    {
+        //        var reply = MessageFactory.Attachment(CreateAdaptiveCardAttachment());
+        //        await turnContext.SendActivityAsync(reply, cancellationToken);
+        //    }
+        //    //else if (turnContext.Activity.Type == "invoke" && turnContext.Activity.Name == "adaptiveCard/action")
+        //    //{
+        //    //    await OnAdaptiveCardInvokeAsync(turnContext, cancellationToken);
+        //    //}
+        //}
+
+        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken = default)
         {
-            if (turnContext.Activity.Type == "message")
-            {
                 var reply = MessageFactory.Attachment(CreateAdaptiveCardAttachment());
                 await turnContext.SendActivityAsync(reply, cancellationToken);
-            }
-            else if (turnContext.Activity.Type == "invoke" && turnContext.Activity.Name == "adaptiveCard/action")
-            {
-                await OnAdaptiveCardInvokeAsync(turnContext,cancellationToken);
-            }
+            
         }
 
         private Attachment CreateAdaptiveCardAttachment()
@@ -42,13 +50,14 @@ namespace MyTeamsApp
             };
 
             return attachment;
-        }        
+        }
 
-        public async Task OnAdaptiveCardInvokeAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        protected override async Task<AdaptiveCardInvokeResponse> OnAdaptiveCardInvokeAsync(ITurnContext<IInvokeActivity> turnContext, AdaptiveCardInvokeValue invokeValue, CancellationToken cancellationToken)
         {
-            if (turnContext.Activity.Value is JObject invokeValue)
+            if (turnContext.Activity.Value is JObject test)
             {
-                if (invokeValue["action"]["verb"].ToString() == "qwerty")
+               
+                if (test["action"]["verb"].ToString() == "qwerty")
                 {
                     // Process the submission data and decide whether to hide 'text box'
                     bool shouldHideField = true;
@@ -75,12 +84,10 @@ namespace MyTeamsApp
                     var activity = MessageFactory.Attachment(updatedCardAttachment);
                     activity.Id = turnContext.Activity.ReplyToId;
                     await turnContext.UpdateActivityAsync(activity, cancellationToken);
-                   
                 }
             }
+
+            return new AdaptiveCardInvokeResponse(){StatusCode = 200};
         }
-
-
-
     }
 }
